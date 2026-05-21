@@ -1,0 +1,1071 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Тренажёр по словообразованию</title>
+<style>
+  :root {
+    --bg: #fafaf7;
+    --surface: #ffffff;
+    --surface-2: #f3f1ea;
+    --text: #2c2c2a;
+    --text-muted: #5f5e5a;
+    --text-soft: #888780;
+    --border: rgba(0,0,0,0.12);
+    --border-strong: rgba(0,0,0,0.22);
+    --accent: #534ab7;
+    --accent-soft: #eeedfe;
+    --accent-text: #3c3489;
+    --ok: #0f6e56;
+    --ok-bg: #e1f5ee;
+    --err: #a32d2d;
+    --err-bg: #fcebeb;
+    --warn: #854f0b;
+    --warn-bg: #faeeda;
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 820px;
+    margin: 0 auto;
+    padding: 28px 20px 60px;
+  }
+  .header {
+    margin-bottom: 24px;
+  }
+  .header h1 {
+    font-size: 24px;
+    font-weight: 600;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+  }
+  .header p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 15px;
+  }
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--surface-2);
+    padding: 4px;
+    border-radius: var(--radius);
+    margin-bottom: 22px;
+  }
+  .tab {
+    flex: 1;
+    padding: 10px 14px;
+    text-align: center;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+    transition: all 0.15s;
+    border: none;
+    background: transparent;
+    font-family: inherit;
+  }
+  .tab.active {
+    background: var(--surface);
+    color: var(--text);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+  }
+  .tab:hover:not(.active) {
+    color: var(--text);
+  }
+
+  .card {
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 22px 24px;
+    margin-bottom: 16px;
+  }
+
+  .progress-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 14px;
+    font-size: 13px;
+    color: var(--text-muted);
+  }
+  .progress-bar {
+    height: 4px;
+    background: var(--surface-2);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 18px;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+  .score-pill {
+    background: var(--surface-2);
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .task-label {
+    font-size: 13px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-bottom: 8px;
+  }
+  .task-text {
+    font-size: 16px;
+    color: var(--text);
+    margin-bottom: 18px;
+  }
+  .task-text b { font-weight: 600; }
+
+  /* ===== CHAIN BUILDER ===== */
+  .pool {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 14px;
+    background: var(--surface-2);
+    border-radius: var(--radius);
+    min-height: 56px;
+    margin-bottom: 16px;
+  }
+  .pool-empty {
+    color: var(--text-soft);
+    font-size: 14px;
+    padding: 6px 4px;
+  }
+  .word-chip {
+    padding: 8px 14px;
+    background: var(--surface);
+    border: 0.5px solid var(--border-strong);
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.12s;
+    font-family: inherit;
+    color: var(--text);
+    user-select: none;
+  }
+  .word-chip:hover {
+    border-color: var(--accent);
+    color: var(--accent-text);
+  }
+  .word-chip.disabled {
+    opacity: 0.4;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  .chain {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+    padding: 14px;
+    background: var(--accent-soft);
+    border-radius: var(--radius);
+    min-height: 56px;
+    margin-bottom: 16px;
+    border: 1px dashed transparent;
+  }
+  .chain-empty {
+    color: var(--text-soft);
+    font-size: 14px;
+    padding: 6px 4px;
+  }
+  .chain .word-chip {
+    background: var(--surface);
+    border-color: var(--accent);
+    color: var(--accent-text);
+  }
+  .chain .arrow {
+    color: var(--accent);
+    font-weight: 600;
+    padding: 0 2px;
+  }
+  .chain .word-chip.correct {
+    background: var(--ok-bg);
+    border-color: var(--ok);
+    color: var(--ok);
+  }
+  .chain .word-chip.wrong {
+    background: var(--err-bg);
+    border-color: var(--err);
+    color: var(--err);
+  }
+
+  .controls {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+  }
+  .btn {
+    padding: 10px 18px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 0.5px solid var(--border-strong);
+    background: var(--surface);
+    color: var(--text);
+    font-family: inherit;
+    transition: all 0.12s;
+  }
+  .btn:hover { background: var(--surface-2); }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-primary {
+    background: var(--accent);
+    color: white;
+    border-color: var(--accent);
+  }
+  .btn-primary:hover { background: var(--accent-text); }
+  .btn-ghost {
+    background: transparent;
+    border-color: transparent;
+    color: var(--text-muted);
+  }
+  .btn-ghost:hover {
+    background: var(--surface-2);
+    color: var(--text);
+  }
+
+  /* ===== FEEDBACK ===== */
+  .feedback {
+    border-radius: var(--radius);
+    padding: 14px 16px;
+    margin-bottom: 14px;
+    font-size: 14px;
+    line-height: 1.6;
+  }
+  .feedback.ok { background: var(--ok-bg); color: #04342c; border: 0.5px solid #1d9e75; }
+  .feedback.err { background: var(--err-bg); color: #501313; border: 0.5px solid #e24b4a; }
+  .feedback.info { background: var(--accent-soft); color: var(--accent-text); border: 0.5px solid var(--accent); }
+  .feedback-title {
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .feedback .chain-display {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 14px;
+    background: rgba(255,255,255,0.55);
+    padding: 8px 10px;
+    border-radius: 6px;
+    margin: 8px 0;
+    word-break: break-word;
+  }
+  .feedback ul { margin: 6px 0 0; padding-left: 20px; }
+  .feedback li { margin-bottom: 3px; }
+
+  /* ===== ANALYSIS MODE (разбор) ===== */
+  .analysis-word {
+    font-size: 28px;
+    font-weight: 500;
+    text-align: center;
+    padding: 18px 0 6px;
+    color: var(--text);
+    letter-spacing: 0.02em;
+  }
+  .analysis-hint {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 14px;
+    margin-bottom: 22px;
+  }
+  .field {
+    margin-bottom: 16px;
+  }
+  .field label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .field input[type="text"] {
+    width: 100%;
+    padding: 11px 14px;
+    border: 0.5px solid var(--border-strong);
+    border-radius: 8px;
+    font-size: 16px;
+    background: var(--surface);
+    color: var(--text);
+    font-family: inherit;
+    transition: border-color 0.12s;
+  }
+  .field input[type="text"]:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  .field input.correct { border-color: var(--ok); background: var(--ok-bg); }
+  .field input.wrong { border-color: var(--err); background: var(--err-bg); }
+
+  .options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  @media (max-width: 540px) {
+    .options { grid-template-columns: 1fr; }
+  }
+  .option {
+    padding: 11px 14px;
+    border: 0.5px solid var(--border-strong);
+    border-radius: 8px;
+    background: var(--surface);
+    cursor: pointer;
+    text-align: left;
+    font-size: 14px;
+    font-family: inherit;
+    color: var(--text);
+    transition: all 0.12s;
+  }
+  .option:hover { background: var(--surface-2); border-color: var(--accent); }
+  .option.selected {
+    background: var(--accent-soft);
+    border-color: var(--accent);
+    color: var(--accent-text);
+  }
+  .option.correct {
+    background: var(--ok-bg);
+    border-color: var(--ok);
+    color: var(--ok);
+  }
+  .option.wrong {
+    background: var(--err-bg);
+    border-color: var(--err);
+    color: var(--err);
+  }
+
+  /* ===== THEORY ===== */
+  .theory-section {
+    margin-bottom: 18px;
+  }
+  .theory-section:last-child { margin-bottom: 0; }
+  .theory-section h3 {
+    font-size: 15px;
+    font-weight: 600;
+    margin: 0 0 8px;
+  }
+  .theory-section p {
+    margin: 0 0 8px;
+    font-size: 14px;
+    color: var(--text-muted);
+    line-height: 1.65;
+  }
+  .theory-section code {
+    background: var(--surface-2);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 13px;
+    color: var(--text);
+  }
+  .theory-example {
+    background: var(--accent-soft);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    margin-top: 8px;
+    font-size: 14px;
+    color: var(--accent-text);
+  }
+  .theory-example b { font-weight: 600; }
+
+  .final-screen {
+    text-align: center;
+    padding: 30px 20px 20px;
+  }
+  .final-screen .big-num {
+    font-size: 48px;
+    font-weight: 600;
+    color: var(--accent);
+    margin: 0 0 6px;
+  }
+  .final-screen p {
+    color: var(--text-muted);
+    margin: 0 0 22px;
+  }
+
+  .stats-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 18px;
+    font-size: 13px;
+  }
+  .stat {
+    flex: 1;
+    background: var(--surface-2);
+    padding: 10px 14px;
+    border-radius: 8px;
+  }
+  .stat .label { color: var(--text-muted); }
+  .stat .val { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); }
+
+  .legend-link {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 13px;
+    color: var(--accent);
+    cursor: pointer;
+    user-select: none;
+  }
+  .legend-link:hover { text-decoration: underline; }
+  .legend-content {
+    margin-top: 10px;
+    padding: 12px 14px;
+    background: var(--surface-2);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--text-muted);
+    line-height: 1.7;
+  }
+  .legend-content.hidden { display: none; }
+  .legend-content b { color: var(--text); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="header">
+    <h1>Тренажёр по словообразованию</h1>
+    <p>Подготовка к вступительному тесту в&nbsp;7&nbsp;класс (Летово). Цепочки и&nbsp;разбор.</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="chain">Цепочка</button>
+    <button class="tab" data-tab="analysis">Разбор</button>
+  </div>
+
+  <div id="app"></div>
+
+</div>
+
+<script>
+// ============================================================
+// ДАННЫЕ
+// ============================================================
+
+// Цепочки. Первый элемент — исходное (непроизводное) слово.
+// hints: пояснения для каждого шага «X образовано от Y способом ...»
+const CHAINS = [
+  {
+    chain: ["катить", "раскатить", "раскат", "раскатистый", "раскатисто"],
+    hints: [
+      "раскатить ← катить (приставочный: добавили приставку рас-)",
+      "раскат ← раскатить (бессуффиксный: отсекли -и-ть, получилось существительное)",
+      "раскатистый ← раскат (суффиксальный: суф. -ист-)",
+      "раскатисто ← раскатистый (суффиксальный: суф. -о, наречие от прилагательного)"
+    ]
+  },
+  {
+    chain: ["белый", "белеть", "побелеть", "побеление"],
+    hints: [
+      "белеть ← белый (суффиксальный: суф. -е-)",
+      "побелеть ← белеть (приставочный: приставка по-)",
+      "побеление ← побелеть (суффиксальный: суф. -ени(е), сущ. от глагола)"
+    ]
+  },
+  {
+    chain: ["учить", "учитель", "учительский", "по-учительски"],
+    hints: [
+      "учитель ← учить (суффиксальный: суф. -тель)",
+      "учительский ← учитель (суффиксальный: суф. -ск-)",
+      "по-учительски ← учительский (приставочно-суффиксальный: по- + -и, наречие)"
+    ]
+  },
+  {
+    chain: ["боль", "болеть", "болезнь", "болезненный", "болезненно"],
+    hints: [
+      "болеть ← боль (суффиксальный: суф. -е-)",
+      "болезнь ← болеть (суффиксальный: суф. -знь)",
+      "болезненный ← болезнь (суффиксальный: суф. -енн-)",
+      "болезненно ← болезненный (суффиксальный: суф. -о, наречие)"
+    ]
+  },
+  {
+    chain: ["рисовать", "нарисовать", "нарисованный"],
+    hints: [
+      "нарисовать ← рисовать (приставочный: приставка на-)",
+      "нарисованный ← нарисовать (суффиксальный: суф. причастия -нн-)"
+    ]
+  },
+  {
+    chain: ["холод", "холодный", "холодно"],
+    hints: [
+      "холодный ← холод (суффиксальный: суф. -н-)",
+      "холодно ← холодный (суффиксальный: суф. -о, наречие)"
+    ]
+  },
+  {
+    chain: ["читать", "прочитать", "прочитанный"],
+    hints: [
+      "прочитать ← читать (приставочный: приставка про-)",
+      "прочитанный ← прочитать (суффиксальный: суф. причастия -нн-)"
+    ]
+  },
+  {
+    chain: ["правда", "правдивый", "правдиво", "неправдиво"],
+    hints: [
+      "правдивый ← правда (суффиксальный: суф. -ив-)",
+      "правдиво ← правдивый (суффиксальный: суф. -о, наречие)",
+      "неправдиво ← правдиво (приставочный: приставка не-)"
+    ]
+  },
+  {
+    chain: ["писать", "записать", "запись"],
+    hints: [
+      "записать ← писать (приставочный: приставка за-)",
+      "запись ← записать (бессуффиксный: отсекли -а-ть, получилось существительное)"
+    ]
+  },
+  {
+    chain: ["шум", "шуметь", "зашуметь"],
+    hints: [
+      "шуметь ← шум (суффиксальный: суф. -е-)",
+      "зашуметь ← шуметь (приставочный: приставка за-)"
+    ]
+  },
+  {
+    chain: ["смотреть", "присмотреть", "присмотр"],
+    hints: [
+      "присмотреть ← смотреть (приставочный: приставка при-)",
+      "присмотр ← присмотреть (бессуффиксный: отсекли -е-ть)"
+    ]
+  },
+  {
+    chain: ["новый", "новость", "новостной"],
+    hints: [
+      "новость ← новый (суффиксальный: суф. -ость)",
+      "новостной ← новость (суффиксальный: суф. -н-)"
+    ]
+  },
+  {
+    chain: ["крепить", "укрепить", "укрепление"],
+    hints: [
+      "укрепить ← крепить (приставочный: приставка у-)",
+      "укрепление ← укрепить (суффиксальный: суф. -ени(е), существительное от глагола)"
+    ]
+  },
+  {
+    chain: ["ходить", "походить", "поход", "походный"],
+    hints: [
+      "походить ← ходить (приставочный: приставка по-)",
+      "поход ← походить (бессуффиксный: отсекли -и-ть, получилось существительное)",
+      "походный ← поход (суффиксальный: суф. -н-)"
+    ]
+  },
+  {
+    chain: ["вечер", "вечерний", "по-вечернему"],
+    hints: [
+      "вечерний ← вечер (суффиксальный: суф. -н-)",
+      "по-вечернему ← вечерний (приставочно-суффиксальный: по- + -ему, наречие)"
+    ]
+  },
+  {
+    chain: ["тёмный", "темнеть", "потемнеть", "потемнение"],
+    hints: [
+      "темнеть ← тёмный (суффиксальный: суф. -е-, глагол от прилагательного)",
+      "потемнеть ← темнеть (приставочный: приставка по-)",
+      "потемнение ← потемнеть (суффиксальный: суф. -ени(е), существительное от глагола)"
+    ]
+  }
+];
+
+// Задания на словообразовательный разбор.
+// produced — производное слово (то, которое разбираем)
+// from — производящее слово
+// way — способ образования
+const ANALYSIS = [
+  { word: "подоконник", from: "окно", way: "приставочно-суффиксальный",
+    expl: "под- + окно + -ник: одновременно приставка и суффикс — это приставочно-суффиксальный способ." },
+  { word: "приморский", from: "море", way: "приставочно-суффиксальный",
+    expl: "при- + море + -ск-: одновременно приставка и суффикс." },
+  { word: "переход", from: "переходить", way: "бессуффиксный",
+    expl: "от глагола переходить отсекли -и-ть, получили существительное (нулевая суффиксация)." },
+  { word: "учитель", from: "учить", way: "суффиксальный",
+    expl: "учить + -тель = существительное со значением «тот, кто учит»." },
+  { word: "переписать", from: "писать", way: "приставочный",
+    expl: "к глаголу писать добавили приставку пере-." },
+  { word: "белизна", from: "белый", way: "суффиксальный",
+    expl: "белый + -изн(а) = существительное." },
+  { word: "синь", from: "синий", way: "бессуффиксный",
+    expl: "от прилагательного синий отсекли -ий, получили существительное." },
+  { word: "пароход", from: "пар, ходить", fromAlt: ["пар и ходить", "ходить, пар", "пар ходить"], way: "сложение",
+    expl: "пар + о + ход(ить) — сложение основ с соединительной -о-." },
+  { word: "столовая (комната)", from: "столовая", fromAlt: ["столовый"], way: "переход из одной части речи в другую",
+    expl: "прилагательное «столовая» (например, столовая комната) перешло в существительное «столовая» (само помещение) без изменения формы — это переход из одной части речи в другую." },
+  { word: "по-русски", from: "русский", way: "приставочно-суффиксальный",
+    expl: "по- + русск- + -и: одновременно приставка и суффикс, наречие." },
+  { word: "безводный", from: "вода", way: "приставочно-суффиксальный",
+    expl: "без- + вод- + -н-: одновременно приставка и суффикс." },
+  { word: "учительница", from: "учитель", way: "суффиксальный",
+    expl: "учитель + -ниц(а) — суффиксальный, женский род от мужского." },
+  { word: "разбег", from: "разбежаться", way: "бессуффиксный",
+    expl: "от глагола разбежаться отсекли -а-ть-ся, получили существительное." },
+  { word: "сверхпрочный", from: "прочный", way: "приставочный",
+    expl: "к прилагательному прочный добавили приставку сверх-." },
+  { word: "землетрясение", from: "земля, трясти", fromAlt: ["земля и трясти", "трясти, земля", "земля трясти"], way: "сложение с суффиксацией", wayAlt: ["сложение"],
+    expl: "земл- + -е- + тряс- + -ени(е): сложение основ с соединительной -е- и одновременной суффиксацией -ени(е). Полное название способа — сложение с суффиксацией; в укороченных списках его называют просто сложением." },
+  { word: "ход", from: "ходить", way: "бессуффиксный",
+    expl: "от глагола ходить отсекли -и-ть, получили существительное." },
+  { word: "учёный (человек)", from: "учёный", fromAlt: ["учёный (прилагательное)"], way: "переход из одной части речи в другую",
+    expl: "прилагательное «учёный» (например, учёный человек) перешло в существительное «учёный» без изменения формы — переход из одной части речи в другую." },
+  { word: "молчун", from: "молчать", way: "суффиксальный",
+    expl: "молчать + -ун = существительное со значением «тот, кто молчит»." },
+  { word: "вездеход", from: "везде, ходить", fromAlt: ["везде и ходить", "ходить, везде", "везде ходить"], way: "сложение",
+    expl: "везд- + -е- + ход(ить): сложение основ." }
+];
+
+// Способы образования — для опций
+const WAYS = [
+  "приставочный",
+  "суффиксальный",
+  "приставочно-суффиксальный",
+  "бессуффиксный",
+  "сложение",
+  "сложение с суффиксацией",
+  "переход из одной части речи в другую"
+];
+
+// ============================================================
+// СОСТОЯНИЕ
+// ============================================================
+
+const state = {
+  tab: "chain",
+  chain: {
+    order: shuffleIdx(CHAINS.length),
+    idx: 0,                  // какое задание сейчас
+    poolWords: [],           // оставшиеся слова в пуле
+    builtChain: [],          // что собрал пользователь
+    checked: false,          // проверено ли
+    correct: false,
+    correctCount: 0,
+    attempts: 0,
+    showLegend: false
+  },
+  analysis: {
+    order: shuffleIdx(ANALYSIS.length),
+    idx: 0,
+    from: "",
+    way: "",
+    checked: false,
+    correct: false,
+    correctCount: 0,
+    attempts: 0
+  }
+};
+
+function shuffleIdx(n) {
+  const a = Array.from({length: n}, (_, i) => i);
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+// ============================================================
+// ИНИЦИАЛИЗАЦИЯ ЗАДАНИЯ
+// ============================================================
+
+function setupChainTask() {
+  const idx = state.chain.order[state.chain.idx];
+  const task = CHAINS[idx];
+  // Перемешиваем слова, но проверяем, чтобы первое не оказалось первым случайно
+  let shuffled;
+  do {
+    shuffled = shuffle(task.chain);
+  } while (shuffled[0] === task.chain[0] && task.chain.length > 2);
+
+  state.chain.poolWords = shuffled;
+  state.chain.builtChain = [];
+  state.chain.checked = false;
+  state.chain.correct = false;
+}
+
+function setupAnalysisTask() {
+  state.analysis.from = "";
+  state.analysis.way = "";
+  state.analysis.checked = false;
+  state.analysis.correct = false;
+}
+
+// ============================================================
+// РЕНДЕР
+// ============================================================
+
+const app = document.getElementById("app");
+
+function render() {
+  document.querySelectorAll(".tab").forEach(t => {
+    t.classList.toggle("active", t.dataset.tab === state.tab);
+  });
+  if (state.tab === "chain") renderChain();
+  else if (state.tab === "analysis") renderAnalysis();
+}
+
+// ---- ВКЛАДКА: ЦЕПОЧКА ----
+function renderChain() {
+  const s = state.chain;
+  const totalTasks = CHAINS.length;
+
+  // Финальный экран
+  if (s.idx >= totalTasks) {
+    app.innerHTML = `
+      <div class="card final-screen">
+        <p class="big-num">${s.correctCount} / ${totalTasks}</p>
+        <p>Цепочки пройдены. Точность: ${Math.round(100 * s.correctCount / Math.max(1, s.attempts))}%</p>
+        <button class="btn btn-primary" id="restart-chain">Начать заново</button>
+      </div>
+    `;
+    document.getElementById("restart-chain").onclick = () => {
+      state.chain.order = shuffleIdx(CHAINS.length);
+      state.chain.idx = 0;
+      state.chain.correctCount = 0;
+      state.chain.attempts = 0;
+      setupChainTask();
+      render();
+    };
+    return;
+  }
+
+  if (s.poolWords.length === 0 && s.builtChain.length === 0 && !s.checked) {
+    setupChainTask();
+  }
+
+  const taskIdx = s.order[s.idx];
+  const task = CHAINS[taskIdx];
+
+  // Сборка HTML
+  const poolHTML = s.poolWords.length === 0
+    ? `<div class="pool-empty">Все слова перенесены в цепочку</div>`
+    : s.poolWords.map((w, i) =>
+        `<button class="word-chip" data-action="pool-to-chain" data-idx="${i}" ${s.checked ? 'disabled' : ''}>${w}</button>`
+      ).join("");
+
+  const chainHTML = s.builtChain.length === 0
+    ? `<div class="chain-empty">Нажимайте на слова, чтобы добавить их по порядку (от исходного к самому сложному)</div>`
+    : s.builtChain.map((w, i) => {
+        let cls = "word-chip";
+        if (s.checked) {
+          cls += task.chain[i] === w ? " correct" : " wrong";
+        }
+        return `${i > 0 ? '<span class="arrow">→</span>' : ''}<button class="${cls}" data-action="chain-to-pool" data-idx="${i}" ${s.checked ? 'disabled' : ''}>${w}</button>`;
+      }).join("");
+
+  let feedbackHTML = "";
+  if (s.checked) {
+    if (s.correct) {
+      feedbackHTML = `
+        <div class="feedback ok">
+          <div class="feedback-title">Цепочка собрана верно.</div>
+          <div class="chain-display">${task.chain.join(" → ")}</div>
+          <ul>${task.hints.map(h => `<li>${h}</li>`).join("")}</ul>
+        </div>
+      `;
+    } else {
+      feedbackHTML = `
+        <div class="feedback err">
+          <div class="feedback-title">Есть ошибка в порядке. Правильная цепочка:</div>
+          <div class="chain-display">${task.chain.join(" → ")}</div>
+          <ul>${task.hints.map(h => `<li>${h}</li>`).join("")}</ul>
+        </div>
+      `;
+    }
+  }
+
+  const canCheck = !s.checked && s.poolWords.length === 0 && s.builtChain.length === task.chain.length;
+  const progress = Math.round(100 * s.idx / totalTasks);
+
+  app.innerHTML = `
+    <div class="card">
+      <div class="progress-row">
+        <span>Задание ${s.idx + 1} из ${totalTasks}</span>
+        <span class="score-pill">верно: ${s.correctCount} / ${s.attempts}</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-bar-fill" style="width: ${progress}%"></div>
+      </div>
+
+      <div class="task-label">Словообразовательная цепочка</div>
+      <div class="task-text">Расставьте однокоренные слова в порядке словообразовательной цепочки — <b>от исходного (непроизводного) слова к самому сложному производному</b>.</div>
+
+      <div class="pool">${poolHTML}</div>
+
+      <div class="chain">${chainHTML}</div>
+
+      <div class="controls">
+        ${!s.checked ? `
+          <button class="btn btn-primary" id="check-btn" ${canCheck ? '' : 'disabled'}>Проверить</button>
+          <button class="btn btn-ghost" id="reset-btn">Сбросить</button>
+        ` : `
+          <button class="btn btn-primary" id="next-btn">Следующее задание</button>
+        `}
+      </div>
+
+      ${feedbackHTML}
+
+      <div>
+        <span class="legend-link" id="legend-link">${s.showLegend ? 'Скрыть подсказку' : 'Подсказка: как искать порядок'}</span>
+        <div class="legend-content ${s.showLegend ? '' : 'hidden'}">
+          <p><b>Алгоритм.</b> Спросите про каждое слово: «От чего оно образовано?» — это и есть его «родитель» в цепочке.</p>
+          <p><b>Признаки исходного слова.</b> Оно непроизводное: у него нет приставки и словообразовательных суффиксов. Часто это короткие глаголы (<i>читать, лить, катить</i>), существительные (<i>лес, вода, боль</i>) или прилагательные (<i>белый, новый</i>).</p>
+          <p><b>Типичный порядок при производстве:</b> глагол → существительное (<i>записать → запись</i>) → прилагательное (<i>записка → запиской</i>) → наречие (<i>правдивый → правдиво</i>). Наречие на -о почти всегда стоит в самом конце.</p>
+          <p><b>Главное правило.</b> Каждое следующее слово отличается от предыдущего ровно на одну приставку/суффикс/постфикс.</p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Обработчики
+  document.querySelectorAll('[data-action="pool-to-chain"]').forEach(b => {
+    b.onclick = () => {
+      const i = parseInt(b.dataset.idx);
+      const w = s.poolWords.splice(i, 1)[0];
+      s.builtChain.push(w);
+      render();
+    };
+  });
+  document.querySelectorAll('[data-action="chain-to-pool"]').forEach(b => {
+    b.onclick = () => {
+      const i = parseInt(b.dataset.idx);
+      const w = s.builtChain.splice(i, 1)[0];
+      s.poolWords.push(w);
+      render();
+    };
+  });
+
+  const checkBtn = document.getElementById("check-btn");
+  if (checkBtn) checkBtn.onclick = () => {
+    s.checked = true;
+    s.correct = s.builtChain.every((w, i) => w === task.chain[i]);
+    s.attempts++;
+    if (s.correct) s.correctCount++;
+    render();
+  };
+
+  const resetBtn = document.getElementById("reset-btn");
+  if (resetBtn) resetBtn.onclick = () => {
+    s.poolWords = s.poolWords.concat(s.builtChain);
+    s.builtChain = [];
+    // Перемешаем заново
+    s.poolWords = shuffle(s.poolWords);
+    render();
+  };
+
+  const nextBtn = document.getElementById("next-btn");
+  if (nextBtn) nextBtn.onclick = () => {
+    s.idx++;
+    if (s.idx < totalTasks) setupChainTask();
+    render();
+  };
+
+  const legendLink = document.getElementById("legend-link");
+  if (legendLink) legendLink.onclick = () => {
+    s.showLegend = !s.showLegend;
+    render();
+  };
+}
+
+// ---- ВКЛАДКА: РАЗБОР ----
+function renderAnalysis() {
+  const s = state.analysis;
+  const totalTasks = ANALYSIS.length;
+
+  if (s.idx >= totalTasks) {
+    app.innerHTML = `
+      <div class="card final-screen">
+        <p class="big-num">${s.correctCount} / ${totalTasks}</p>
+        <p>Разборы пройдены. Точность: ${Math.round(100 * s.correctCount / Math.max(1, s.attempts))}%</p>
+        <button class="btn btn-primary" id="restart-analysis">Начать заново</button>
+      </div>
+    `;
+    document.getElementById("restart-analysis").onclick = () => {
+      state.analysis.order = shuffleIdx(ANALYSIS.length);
+      state.analysis.idx = 0;
+      state.analysis.correctCount = 0;
+      state.analysis.attempts = 0;
+      setupAnalysisTask();
+      render();
+    };
+    return;
+  }
+
+  const taskIdx = s.order[s.idx];
+  const task = ANALYSIS[taskIdx];
+
+  const acceptedFroms = [task.from].concat(task.fromAlt || []);
+  const fromCorrect = s.checked && acceptedFroms.some(f => normalize(s.from) === normalize(f));
+  const fromWrong = s.checked && !fromCorrect;
+
+  const progress = Math.round(100 * s.idx / totalTasks);
+
+  let feedbackHTML = "";
+  if (s.checked) {
+    if (s.correct) {
+      feedbackHTML = `
+        <div class="feedback ok">
+          <div class="feedback-title">Разбор верный.</div>
+          <div>${task.expl}</div>
+        </div>
+      `;
+    } else {
+      feedbackHTML = `
+        <div class="feedback err">
+          <div class="feedback-title">Правильный разбор:</div>
+          <div><b>${task.word}</b> ← <b>${task.from}</b>, способ — <b>${task.way}</b>.</div>
+          <div style="margin-top:6px">${task.expl}</div>
+        </div>
+      `;
+    }
+  }
+
+  const wayOptionsHTML = WAYS.map(w => {
+    let cls = "option";
+    const acceptedWays = [task.way].concat(task.wayAlt || []);
+    if (s.checked) {
+      if (acceptedWays.includes(w)) cls += " correct";
+      else if (w === s.way) cls += " wrong";
+    } else if (w === s.way) cls += " selected";
+    return `<button class="${cls}" data-way="${w}" ${s.checked ? 'disabled' : ''}>${w}</button>`;
+  }).join("");
+
+  app.innerHTML = `
+    <div class="card">
+      <div class="progress-row">
+        <span>Задание ${s.idx + 1} из ${totalTasks}</span>
+        <span class="score-pill">верно: ${s.correctCount} / ${s.attempts}</span>
+      </div>
+      <div class="progress-bar">
+        <div class="progress-bar-fill" style="width: ${progress}%"></div>
+      </div>
+
+      <div class="task-label">Словообразовательный разбор</div>
+      <div class="task-text">Определите, от какого слова образовано данное, и каким способом.</div>
+
+      <div class="analysis-word">${task.word}</div>
+      <div class="analysis-hint">← образовано от слова ?</div>
+
+      <div class="field">
+        <label for="from-input">Производящее слово (от чего образовано)</label>
+        <input
+          type="text"
+          id="from-input"
+          value="${s.from}"
+          placeholder="Введите слово в начальной форме"
+          ${s.checked ? 'disabled' : ''}
+          class="${fromCorrect ? 'correct' : (fromWrong ? 'wrong' : '')}"
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="field">
+        <label>Способ образования</label>
+        <div class="options">${wayOptionsHTML}</div>
+      </div>
+
+      <div class="controls">
+        ${!s.checked ? `
+          <button class="btn btn-primary" id="check-btn" ${(s.from.trim() && s.way) ? '' : 'disabled'}>Проверить</button>
+        ` : `
+          <button class="btn btn-primary" id="next-btn">Следующее задание</button>
+        `}
+      </div>
+
+      ${feedbackHTML}
+    </div>
+  `;
+
+  const fromInput = document.getElementById("from-input");
+  if (fromInput) {
+    fromInput.oninput = () => {
+      s.from = fromInput.value;
+      // Активируем кнопку без полного ререндера, чтобы фокус не терялся
+      const checkBtn = document.getElementById("check-btn");
+      if (checkBtn) checkBtn.disabled = !(s.from.trim() && s.way);
+    };
+  }
+
+  document.querySelectorAll('[data-way]').forEach(b => {
+    b.onclick = () => {
+      s.way = b.dataset.way;
+      render();
+      // Возвращаем фокус, чтобы не сбивать пользователя
+      const fi = document.getElementById("from-input");
+      if (fi && !s.from) fi.focus();
+    };
+  });
+
+  const checkBtn = document.getElementById("check-btn");
+  if (checkBtn) checkBtn.onclick = () => {
+    s.checked = true;
+    const acceptedFroms = [task.from].concat(task.fromAlt || []);
+    const acceptedWays = [task.way].concat(task.wayAlt || []);
+    const fromOk = acceptedFroms.some(f => normalize(s.from) === normalize(f));
+    const wayOk = acceptedWays.includes(s.way);
+    s.correct = fromOk && wayOk;
+    s.attempts++;
+    if (s.correct) s.correctCount++;
+    render();
+  };
+
+  const nextBtn = document.getElementById("next-btn");
+  if (nextBtn) nextBtn.onclick = () => {
+    s.idx++;
+    setupAnalysisTask();
+    render();
+  };
+}
+
+function normalize(str) {
+  return (str || "").trim().toLowerCase().replace(/ё/g, "е").replace(/\s+/g, " ");
+}
+
+// ============================================================
+// СТАРТ
+// ============================================================
+
+document.querySelectorAll(".tab").forEach(t => {
+  t.onclick = () => {
+    state.tab = t.dataset.tab;
+    if (state.tab === "chain" && state.chain.builtChain.length === 0 && state.chain.poolWords.length === 0) {
+      setupChainTask();
+    }
+    render();
+  };
+});
+
+setupChainTask();
+setupAnalysisTask();
+render();
+</script>
+</body>
+</html>
